@@ -6,10 +6,10 @@ import {
   Provider,
 } from '@nestjs/common';
 import { HttpAdapterHost, MetadataScanner } from '@nestjs/core';
-import * as GQL from 'fastify-gql';
+import * as mercurius from 'mercurius';
 import { printSchema } from 'graphql';
 import { GRAPHQL_MODULE_ID, GRAPHQL_MODULE_OPTIONS } from './fgql.constants';
-import { GraphQLAstExplorer, } from './graphql-ast.explorer';
+import { GraphQLAstExplorer } from './graphql-ast.explorer';
 import { GraphQLSchemaBuilder } from './graphql-schema.builder';
 import { GraphQLSchemaHost } from './graphql-schema.host';
 import { GraphQLTypesLoader } from './graphql-types.loader';
@@ -146,7 +146,7 @@ export class FgqlModule implements OnModuleInit {
 
     const app = httpAdapter.getInstance();
 
-    app.register(GQL, {
+    app.register(mercurius, {
       graphiql: true,
       jit: 1,
       ...options,

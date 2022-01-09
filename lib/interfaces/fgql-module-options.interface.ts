@@ -1,13 +1,13 @@
 import { ExecutableSchemaTransformation } from '@graphql-tools/schema';
-import { IResolvers , IResolverValidationOptions} from '@graphql-tools/utils';
+import { IResolvers, IResolverValidationOptions } from '@graphql-tools/utils';
 import { ModuleMetadata, Type } from '@nestjs/common/interfaces';
-import * as GQL from 'fastify-gql';
+import { MercuriusOptions } from 'mercurius';
 import { GraphQLSchema } from 'graphql';
 import { DefinitionsGeneratorOptions } from '../graphql-ast.explorer';
 import { BuildSchemaOptions } from './build-schema-options.interface';
 
 export interface FgqlModuleOptions
-  extends Omit<GQL.FastifyGQLOptions, 'schema' | 'resolvers'> {
+  extends Omit<MercuriusOptions, 'schema' | 'resolvers'> {
   schema?: GraphQLSchema;
   resolvers?: IResolvers;
   typeDefs?: string | string[];
@@ -34,7 +34,7 @@ export interface FgqlModuleOptions
    * Enable/disable enhancers for @ResolveField()
    */
   fieldResolverEnhancers?: Enhancer[];
-    /**
+  /**
    * Apply `transformSchema` to the `autoSchemaFile`
    */
   transformAutoSchemaFile?: boolean;
