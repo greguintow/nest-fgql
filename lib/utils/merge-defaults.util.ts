@@ -18,11 +18,13 @@ export function mergeDefaults(
   if (!moduleOptions.context) {
     moduleOptions.context = (
       request: FastifyRequest,
+      // @ts-ignore
       reply: FastifyReply<unknown>,
     ) => Promise.resolve({ req: request });
   } else if (isFunction(moduleOptions.context)) {
     moduleOptions.context = async (
       request: FastifyRequest,
+      // @ts-ignore
       reply: FastifyReply<unknown>,
     ) => {
       const ctx = await (options.context as Function)(request, reply);
@@ -31,6 +33,7 @@ export function mergeDefaults(
   } else {
     moduleOptions.context = (
       request: FastifyRequest,
+      // @ts-ignore
       reply: FastifyReply<unknown>,
     ) => {
       return Promise.resolve(

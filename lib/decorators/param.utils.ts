@@ -2,7 +2,7 @@ import { PipeTransform, Type } from '@nestjs/common';
 import { isNil, isString } from '@nestjs/common/utils/shared.utils';
 import 'reflect-metadata';
 import { GqlParamtype } from '../enums/gql-paramtype.enum';
-import { PARAM_ARGS_METADATA } from '../fgql.constants';
+import { PARAM_ARGS_METADATA } from '../graphql.constants';
 
 export type ParamData = object | string | number;
 export type ParamsMetadata = Record<

@@ -1,8 +1,9 @@
+import { ExecutableSchemaTransformation } from '@graphql-tools/schema';
+import { IResolvers , IResolverValidationOptions} from '@graphql-tools/utils';
 import { ModuleMetadata, Type } from '@nestjs/common/interfaces';
 import * as GQL from 'fastify-gql';
 import { GraphQLSchema } from 'graphql';
-import { IResolvers } from 'graphql-tools';
-import { DefinitionsGeneratorOptions } from '../graphql/graphql-ast.explorer';
+import { DefinitionsGeneratorOptions } from '../graphql-ast.explorer';
 import { BuildSchemaOptions } from './build-schema-options.interface';
 
 export interface FgqlModuleOptions
@@ -22,23 +23,24 @@ export interface FgqlModuleOptions
   buildSchemaOptions?: BuildSchemaOptions;
   include?: Function[];
   schemaDirectives?: Record<string, any>;
+  schemaTransforms?: ExecutableSchemaTransformation[];
   resolverValidationOptions?: IResolverValidationOptions;
   directiveResolvers?: any;
+  /**
+   * Sort the schema lexicographically
+   */
+  sortSchema?: boolean;
   /**
    * Enable/disable enhancers for @ResolveField()
    */
   fieldResolverEnhancers?: Enhancer[];
+    /**
+   * Apply `transformSchema` to the `autoSchemaFile`
+   */
+  transformAutoSchemaFile?: boolean;
 }
 
 export type Enhancer = 'guards' | 'interceptors' | 'filters';
-
-export interface IResolverValidationOptions {
-  requireResolversForArgs?: boolean;
-  requireResolversForNonScalar?: boolean;
-  requireResolversForAllFields?: boolean;
-  requireResolversForResolveType?: boolean;
-  allowResolversNotInSchema?: boolean;
-}
 
 export interface GqlOptionsFactory {
   createGqlOptions(): Promise<FgqlModuleOptions> | FgqlModuleOptions;

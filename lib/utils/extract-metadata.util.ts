@@ -3,7 +3,7 @@ import {
   RESOLVER_NAME_METADATA,
   RESOLVER_PROPERTY_METADATA,
   RESOLVER_TYPE_METADATA,
-} from '../fgql.constants';
+} from '../graphql.constants';
 import { ResolverMetadata } from '../interfaces/resolver-metadata.interface';
 
 export function extractMetadata(
@@ -12,7 +12,6 @@ export function extractMetadata(
   methodName: string,
   filterPredicate: (
     resolverType: string,
-    isReferenceResolver?: boolean,
     isPropertyResolver?: boolean,
   ) => boolean,
 ): ResolverMetadata {
@@ -27,7 +26,8 @@ export function extractMetadata(
   );
 
   const resolverName = Reflect.getMetadata(RESOLVER_NAME_METADATA, callback);
-  if (filterPredicate(resolverType, false, isPropertyResolver)) {
+
+  if (filterPredicate(resolverType, isPropertyResolver)) {
     return null;
   }
 

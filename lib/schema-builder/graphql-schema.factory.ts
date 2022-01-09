@@ -1,7 +1,10 @@
 import { Injectable, Logger, Type } from '@nestjs/common';
 import { isEmpty, isFunction } from '@nestjs/common/utils/shared.utils';
 import { getIntrospectionQuery, graphql, GraphQLSchema } from 'graphql';
-import { SCALAR_NAME_METADATA, SCALAR_TYPE_METADATA } from '../fgql.constants';
+import {
+  SCALAR_NAME_METADATA,
+  SCALAR_TYPE_METADATA,
+} from '../graphql.constants';
 import { BuildSchemaOptions, ScalarsTypeMap } from '../interfaces';
 import { createScalarType } from '../utils/scalar-types.utils';
 import { SchemaGenerationError } from './errors/schema-generation.error';

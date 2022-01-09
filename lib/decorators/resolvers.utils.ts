@@ -4,7 +4,7 @@ import { Resolver } from '../enums/resolver.enum';
 import {
   RESOLVER_NAME_METADATA,
   RESOLVER_TYPE_METADATA,
-} from '../fgql.constants';
+} from '../graphql.constants';
 import { UndefinedResolverTypeError } from '../schema-builder/errors/undefined-resolver-type.error';
 import { ResolverTypeFn } from './resolver.decorator';
 

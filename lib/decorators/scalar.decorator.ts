@@ -2,7 +2,7 @@ import { SetMetadata } from '@nestjs/common';
 import {
   SCALAR_NAME_METADATA,
   SCALAR_TYPE_METADATA,
-} from '../fgql.constants';
+} from '../graphql.constants';
 import { ReturnTypeFunc } from '../interfaces/return-type-func.interface';
 
 /**

@@ -13,6 +13,7 @@ export * from './object-type.decorator';
 export * from './parent.decorator';
 export * from './query.decorator';
 export * from './resolve-field.decorator';
+export * from './resolve-property.decorator';
 export * from './resolver.decorator';
 export * from './root.decorator';
 export * from './scalar.decorator';

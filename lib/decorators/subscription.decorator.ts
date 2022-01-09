@@ -2,7 +2,7 @@ import { SetMetadata, Type } from '@nestjs/common';
 import { isString } from '@nestjs/common/utils/shared.utils';
 import 'reflect-metadata';
 import { Resolver } from '../enums/resolver.enum';
-import { SUBSCRIPTION_OPTIONS_METADATA } from '../fgql.constants';
+import { SUBSCRIPTION_OPTIONS_METADATA } from '../graphql.constants';
 import { BaseTypeOptions, ReturnTypeFunc } from '../interfaces';
 import { UndefinedReturnTypeError } from '../schema-builder/errors/undefined-return-type.error';
 import { ResolverTypeMetadata } from '../schema-builder/metadata';

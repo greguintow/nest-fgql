@@ -12,6 +12,12 @@ import {
   TypeChecker,
   TypeFlags,
   TypeFormatFlags,
+  SourceFile,
+  CommentRange,
+  getLeadingCommentRanges,
+  getTrailingCommentRanges,
+  UnionTypeNode,
+  TypeNode,
 } from 'typescript';
 import { isDynamicallyAdded } from './plugin-utils';
 
@@ -64,6 +70,22 @@ export function isEnum(type: Type) {
 
 export function isEnumLiteral(type: Type) {
   return hasFlag(type, TypeFlags.EnumLiteral) && !type.isUnion();
+}
+
+export function isNull(type: Type) {
+  if (type.isUnion()) {
+    return Boolean(type.types.find((t) => hasFlag(t, TypeFlags.Null)));
+  } else {
+    return hasFlag(type, TypeFlags.Null);
+  }
+}
+
+export function isUndefined(type: Type) {
+  if (type.isUnion()) {
+    return Boolean(type.types.find((t) => hasFlag(t, TypeFlags.Undefined)));
+  } else {
+    return hasFlag(type, TypeFlags.Undefined);
+  }
 }
 
 export function hasFlag(type: Type, flag: TypeFlags) {
@@ -133,4 +155,45 @@ function getNameFromExpression(expression: LeftHandSideExpression) {
     return (expression as PropertyAccessExpression).name;
   }
   return expression;
+}
+
+export function getDescriptionOfNode(
+  node: Node,
+  sourceFile: SourceFile,
+): string {
+  const sourceText = sourceFile.getFullText();
+  // in case we decide to include "// comments"
+  const replaceRegex = /^ *\** *@.*$|^ *\/\*+ *|^ *\/\/+.*|^ *\/+ *|^ *\*+ *| +$| *\**\/ *$/gim;
+  //const replaceRegex = /^ *\** *@.*$|^ *\/\*+ *|^ *\/+ *|^ *\*+ *| +$| *\**\/ *$/gim;
+
+  const description = [];
+  const introspectCommentsAndExamples = (comments?: CommentRange[]) =>
+    comments?.forEach((comment) => {
+      const commentSource = sourceText.substring(comment.pos, comment.end);
+      const oneComment = commentSource.replace(replaceRegex, '').trim();
+      if (oneComment) {
+        description.push(oneComment);
+      }
+    });
+
+  const leadingCommentRanges = getLeadingCommentRanges(
+    sourceText,
+    node.getFullStart(),
+  );
+  introspectCommentsAndExamples(leadingCommentRanges);
+  if (!description.length) {
+    const trailingCommentRanges = getTrailingCommentRanges(
+      sourceText,
+      node.getFullStart(),
+    );
+    introspectCommentsAndExamples(trailingCommentRanges);
+  }
+  return description.join('\n');
+}
+
+export function findNullableTypeFromUnion(typeNode: UnionTypeNode, typeChecker: TypeChecker) {
+  return typeNode.types.find(
+    (tNode: TypeNode) =>
+      hasFlag(typeChecker.getTypeAtLocation(tNode), TypeFlags.Null)
+  );
 }

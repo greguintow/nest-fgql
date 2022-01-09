@@ -4,7 +4,7 @@ type AsyncIterator<T> = {
   next(value?: any): Promise<IteratorResult<T>>;
   return(): any;
   throw(error: any): any;
-  [$$asyncIterator](): AsyncIterator<T>;
+  [$$asyncIterator]: any;
 };
 
 export const createAsyncIterator = async <T = any>(
@@ -23,7 +23,7 @@ export const createAsyncIterator = async <T = any>(
     }
     return Promise.resolve(filterFn(payload.value))
       .catch(() => false)
-      .then(result => (result ? payload : getNextValue()));
+      .then((result) => (result ? payload : getNextValue()));
   };
 
   return {

@@ -30,7 +30,7 @@ import {
   ParameterDeclarationStructure,
   SourceFile,
 } from 'ts-morph';
-import { DEFINITIONS_FILE_HEADER } from '../fgql.constants';
+import { DEFINITIONS_FILE_HEADER } from './graphql.constants';
 
 let tsMorphLib: typeof import('ts-morph') | undefined;
 
@@ -46,6 +46,39 @@ export interface DefinitionsGeneratorOptions {
    * @default false
    */
   skipResolverArgs?: boolean;
+
+  /**
+   * If provided, specifies a default generated TypeScript type for custom scalars.
+   * @default 'any'
+   */
+  defaultScalarType?: string;
+
+  /**
+   * If provided, specifies a mapping of types to use for custom scalars
+   * @default undefined
+   */
+  customScalarTypeMapping?: Record<string, string | { name: string }>;
+
+  /**
+   * If provided, specifies a mapping of default scalar types (Int, Boolean, ID, Float, String).
+   * @default undefined
+   */
+  defaultTypeMapping?: Partial<
+    Record<'ID' | 'Boolean' | 'Float' | 'String' | 'Int', string>
+  >;
+
+  /**
+   * If provided, specifies a custom header to add after the
+   * to the output file (eg. for custom type imports or comments)
+   * @default undefined
+   */
+  additionalHeader?: string;
+
+  /**
+   * If true, enums are generated as string literal union types.
+   * @default false
+   */
+  enumsAsTypes?: boolean;
 }
 
 @Injectable()
@@ -86,7 +119,21 @@ export class GraphQLAstExplorer {
       ),
     );
 
-    tsFile.insertText(0, DEFINITIONS_FILE_HEADER);
+    const header = options.additionalHeader
+      ? `${DEFINITIONS_FILE_HEADER}\n${options.additionalHeader}\n\n`
+      : DEFINITIONS_FILE_HEADER;
+    tsFile.insertText(0, header);
+    tsFile.addTypeAlias({
+      name: 'Nullable',
+      isExported: false,
+      type: 'T | null',
+      typeParameters: [
+        {
+          name: 'T',
+        },
+      ],
+    });
+
     return tsFile;
   }
 
@@ -113,10 +160,10 @@ export class GraphQLAstExplorer {
         return this.addObjectTypeDefinition(item, tsFile, 'interface', options);
       case 'ScalarTypeDefinition':
       case 'ScalarTypeExtension':
-        return this.addScalarDefinition(item, tsFile);
+        return this.addScalarDefinition(item, tsFile, options);
       case 'EnumTypeDefinition':
       case 'EnumTypeExtension':
-        return this.addEnumDefinition(item, tsFile);
+        return this.addEnumDefinition(item, tsFile, options);
       case 'UnionTypeDefinition':
       case 'UnionTypeExtension':
         return this.addUnionDefinition(item, tsFile);
@@ -240,7 +287,10 @@ export class GraphQLAstExplorer {
       return;
     }
 
-    const { name: type, required } = this.getFieldTypeDefinition(item.type);
+    const { name: type, required } = this.getFieldTypeDefinition(
+      item.type,
+      options,
+    );
     if (!this.isRoot(parentRef.getName())) {
       (parentRef as InterfaceDeclaration).addProperty({
         name: propertyName,
@@ -249,6 +299,7 @@ export class GraphQLAstExplorer {
       });
       return;
     }
+
     if (options.skipResolverArgs) {
       (parentRef as ClassDeclaration).addProperty({
         name: propertyName,
@@ -259,39 +310,48 @@ export class GraphQLAstExplorer {
       (parentRef as ClassDeclaration).addMethod({
         isAbstract: mode === 'class',
         name: propertyName,
-        returnType: `${this.addSymbolIfRoot(
-          type,
-        )} | Promise<${this.addSymbolIfRoot(type)}>`,
+        returnType: `${type} | Promise<${type}>`,
         parameters: this.getFunctionParameters(
           (item as FieldDefinitionNode).arguments,
+          options,
         ),
       });
     }
   }
 
   getFieldTypeDefinition(
-    type: TypeNode,
+    typeNode: TypeNode,
+    options: DefinitionsGeneratorOptions,
   ): {
     name: string;
     required: boolean;
   } {
-    const { required, type: nestedType } = this.getNestedType(type);
-    type = nestedType;
+    const { required, type } = this.getNestedType(typeNode);
 
     const isArray = type.kind === 'ListType';
     if (isArray) {
-      const { type: nestedType } = this.getNestedType(get(type, 'type'));
-      type = nestedType;
+      const {
+        type: arrayType,
+        required: arrayTypeRequired,
+      } = this.getNestedType(get(type, 'type'));
 
-      const typeName = get(type, 'name.value');
+      const typeName = this.addSymbolIfRoot(get(arrayType, 'name.value'));
+      const name = arrayTypeRequired
+        ? this.getType(typeName, options)
+        : `Nullable<${this.getType(typeName, options)}>`;
+
       return {
-        name: this.getType(typeName) + '[]',
+        name: required ? name + '[]' : `Nullable<${name}[]>`,
         required,
       };
     }
-    const typeName = get(type, 'name.value');
+
+    const typeName = this.addSymbolIfRoot(get(type, 'name.value'));
+
     return {
-      name: this.getType(typeName),
+      name: required
+        ? this.getType(typeName, options)
+        : `Nullable<${this.getType(typeName, options)}>`,
       required,
     };
   }
@@ -312,30 +372,36 @@ export class GraphQLAstExplorer {
     return { type, required: false };
   }
 
-  getType(typeName: string): string {
-    const defaults = this.getDefaultTypes();
+  getType(typeName: string, options: DefinitionsGeneratorOptions): string {
+    const defaults = this.getDefaultTypes(options);
     const isDefault = defaults[typeName];
     return isDefault ? defaults[typeName] : typeName;
   }
 
-  getDefaultTypes(): { [type: string]: string } {
+  getDefaultTypes(
+    options: DefinitionsGeneratorOptions,
+  ): { [type: string]: string } {
     return {
-      String: 'string',
-      Int: 'number',
-      Boolean: 'boolean',
-      ID: 'string',
-      Float: 'number',
+      String: options.defaultTypeMapping?.String ?? 'string',
+      Int: options.defaultTypeMapping?.Int ?? 'number',
+      Boolean: options.defaultTypeMapping?.Boolean ?? 'boolean',
+      ID: options.defaultTypeMapping?.ID ?? 'string',
+      Float: options.defaultTypeMapping?.Float ?? 'number',
     };
   }
 
   getFunctionParameters(
     inputs: ReadonlyArray<InputValueDefinitionNode>,
+    options: DefinitionsGeneratorOptions,
   ): ParameterDeclarationStructure[] {
     if (!inputs) {
       return [];
     }
     return inputs.map((element) => {
-      const { name, required } = this.getFieldTypeDefinition(element.type);
+      const { name, required } = this.getFieldTypeDefinition(
+        element.type,
+        options,
+      );
       return {
         name: get(element, 'name.value'),
         type: name,
@@ -348,14 +414,20 @@ export class GraphQLAstExplorer {
   addScalarDefinition(
     item: ScalarTypeDefinitionNode | ScalarTypeExtensionNode,
     tsFile: SourceFile,
+    options: DefinitionsGeneratorOptions,
   ) {
     const name = get(item, 'name.value');
     if (!name || name === 'Date') {
       return;
     }
+
+    const typeMapping = options.customScalarTypeMapping?.[name];
+    const mappedTypeName =
+      typeof typeMapping === 'string' ? typeMapping : typeMapping?.name;
+
     tsFile.addTypeAlias({
       name,
-      type: 'any',
+      type: mappedTypeName ?? options.defaultScalarType ?? 'any',
       isExported: true,
     });
   }
@@ -393,10 +465,21 @@ export class GraphQLAstExplorer {
   addEnumDefinition(
     item: EnumTypeDefinitionNode | EnumTypeExtensionNode,
     tsFile: SourceFile,
+    options: DefinitionsGeneratorOptions,
   ) {
     const name = get(item, 'name.value');
     if (!name) {
       return;
+    }
+    if (options.enumsAsTypes) {
+      const values = item.values.map(
+        (value) => `"${get(value, 'name.value')}"`,
+      );
+      return tsFile.addTypeAlias({
+        name,
+        type: values.join(' | '),
+        isExported: true,
+      });
     }
     const members = map(item.values, (value) => ({
       name: get(value, 'name.value'),

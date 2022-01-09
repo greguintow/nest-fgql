@@ -4,7 +4,8 @@ export function extend(obj1: unknown, obj2: unknown): any {
   if (isString(obj1)) {
     return isString(obj2)
       ? [defaultTo(obj1, ''), defaultTo(obj2, '')]
-      : ([defaultTo(obj1, '')] as any[]).concat(defaultTo(obj2, []));
+      // @ts-ignore
+      : [defaultTo(obj1, '')].concat(defaultTo(obj2, []));
   }
   if (isArray(obj1)) {
     return defaultTo(obj1, []).concat(defaultTo(obj2, []));

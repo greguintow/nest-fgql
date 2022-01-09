@@ -25,13 +25,14 @@ export class InputTypeFactory {
       typeRef,
       buildOptions.scalarsMap,
       buildOptions.dateScalarMode,
+      buildOptions.numberScalarMode,
     );
     if (!inputType) {
       inputType = this.typeDefinitionsStorage.getInputTypeAndExtract(
         typeRef as any,
       );
       if (!inputType) {
-        throw new CannotDetermineInputTypeError(hostType);
+        throw new CannotDetermineInputTypeError(hostType, typeRef);
       }
     }
     return this.typeMapperService.mapToGqlType(
