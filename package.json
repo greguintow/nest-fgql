@@ -1,6 +1,6 @@
 {
   "name": "@greguintow/nest-fgql",
-  "version": "1.0.10",
+  "version": "2.0.0",
   "description": "Fast, lightweight GraphQL module to be used in NestJS",
   "author": "Mirco Bartels",
   "license": "MIT",
@@ -92,7 +92,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/mirco312312/nest-fgql.git"
+    "url": "git+https://github.com/greguintow/nest-fgql.git"
   },
   "jest": {
     "moduleFileExtensions": [
